@@ -32,7 +32,7 @@ CalcMachine::CalcMachine(const std::string& fn) : function(fn){
 
 //Method that formats the input string to a more easily parsed form
 void CalcMachine::format() {
-    //Removes spaces using the shunt method
+    //Removes spaces
     for(unsigned a = 0; a < function.length(); a++) {
         if(function.at(a) == ' ') {
             function.erase(a);
