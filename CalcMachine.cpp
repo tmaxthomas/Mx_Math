@@ -109,6 +109,7 @@ void incFunc(int& inc, bool dir){
     else inc--;
 }
 
+//Helper function for tree generation
 CalcTree* CalcMachine::binaryOpGenerator(CalcTree::Operators op, char ch, bool dir, std::string& function){
     int closure = 0;
     int a, b;
@@ -124,10 +125,8 @@ CalcTree* CalcMachine::binaryOpGenerator(CalcTree::Operators op, char ch, bool d
             }
         }
         if(function.at(a) == ch) {
-            if(ch == '-'){ //Special case to deal with minus signs as opposed to subtraction operators
-
-            }
-            return new CalcTree(op, generateTree(function.substr(0, a)), generateTree(function.substr(a + 1, function.length() - a - 1)));
+            if(ch != '-' || (isANum(function.at(a - 1)) || function.at(a - 1) == ')')) //Conditional to deal with not confusing minus signs and subtraction
+                return new CalcTree(op, generateTree(function.substr(0, a)), generateTree(function.substr(a + 1, function.length() - a - 1)));
         }
     }
     return NULL;
