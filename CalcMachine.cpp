@@ -32,6 +32,8 @@ CalcMachine::CalcMachine(const std::string& fn) : function(fn){
 
 //Method that formats the input string to a more easily parsed form
 void CalcMachine::format() {
+    if(function.at(0) == '"')
+        function = function.substr(1, function.length() - 2);
     //Removes spaces
     for(unsigned a = 0; a < function.length(); a++) {
         if(function.at(a) == ' ') {
@@ -73,13 +75,18 @@ CalcTree* CalcMachine::generateTree(std::string function) {
     unsigned closure = 0; //Variable used in code designed to skip over sections of the function enclosed in parentheses
     //This for loop makes sure the input string is not enclosed within superfluous parentheses, such as those in the string "(3+x)"
     for(unsigned a = 0; a < function.size(); a++) {
-        if(function.at(a) == '(') closure++;
-        else if(function.at(a) == ')') closure--;
-        else if(closure == 0 && a != function.length() - 1) break;
-        else if(a != 0 && closure == 0 && a == function.length() - 1) function = function.substr(1, function.length() - 2);
+        if(function.at(a) == '(')
+            closure++;
+        else if(function.at(a) == ')')
+            closure--;
+        if(closure == 0 && a != function.length() - 1)
+            break;
+        else if(a != 0 && closure == 0 && a == function.length() - 1)
+            function = function.substr(1, function.length() - 2);
     }
 
-    if(isANum(function)) return new CalcTree(function);
+    if(isANum(function))
+        return new CalcTree(function);
 
     CalcTree* ret_ptr = binaryOpGenerator(CalcTree::add, '+', true, function);
     if(ret_ptr != NULL) return ret_ptr;
@@ -105,8 +112,13 @@ CalcTree* CalcMachine::generateTree(std::string function) {
 }
 //Switchable incrementer/decrementer
 void incFunc(int& inc, bool dir){
-    if(dir) inc++;
-    else inc--;
+    if(dir) ++inc;
+    else --inc;
+}
+
+bool comp(int a, int b, bool dir){
+    if(dir) return a < b;
+    else return a > b;
 }
 
 //Helper function for tree generation
@@ -115,18 +127,20 @@ CalcTree* CalcMachine::binaryOpGenerator(CalcTree::Operators op, char ch, bool d
     int a, b;
     if(dir) { a = 0; b = function.size(); }
     else { a = function.size() - 1; b = 0; }
-    for(; a != b; incFunc(a, dir)) {
-        if(function.at(a) == ')') {
+    for(int c = a; comp(c, b, dir); incFunc(c, dir)) {
+        if(( dir && function.at(c) == '(') || (!dir && function.at(c) == ')')) {
             closure = 1;
             while(closure != 0) {
-                incFunc(a, dir);
-                if(function.at(a) == ')') closure++;
-                else if(function.at(a) == '(') closure--;
+                incFunc(c, dir);
+                if(( dir && function.at(c) == '(') || (!dir && function.at(c) == ')')) closure++;
+                else if(( dir && function.at(c) == ')') || (!dir && function.at(c) == '(')) closure--;
             }
         }
-        if(function.at(a) == ch) {
-            if(ch != '-' || (isANum(function.at(a - 1)) || function.at(a - 1) == ')')) //Conditional to deal with not confusing minus signs and subtraction
-                return new CalcTree(op, generateTree(function.substr(0, a)), generateTree(function.substr(a + 1, function.length() - a - 1)));
+        if(function.at(c) == ch) {
+            if (ch != '-' || (isANum(function.at(c - 1)) || function.at(c - 1) ==
+                                                            ')')) //Conditional to deal with not confusing minus signs and subtraction
+                return new CalcTree(op, generateTree(function.substr(0, c)),
+                                    generateTree(function.substr(c + 1, function.length() - c - 1)));
         }
     }
     return NULL;
@@ -174,4 +188,13 @@ double recurseEvaluate(CalcTree* parsetree, double index) {
 const double CalcMachine::evaluate(const double index) const{
     std::cout << "Evaluating\n";
     return recurseEvaluate(root, index);
+}
+
+const double CalcMachine::integrate(const double low_bound, const double high_bound) const{
+    std::cout << "Integrating\n";
+    double ret = 0;
+    for(double a = low_bound; a < high_bound; a += .001){
+        ret += ((recurseEvaluate(root, a) + recurseEvaluate(root, a + .001)) / 2) * .001;
+    }
+    return ret;
 }

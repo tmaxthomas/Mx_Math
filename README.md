@@ -12,7 +12,7 @@ evaluation: Evaluates the function at the given value of x (third argument)
 
 
 Guidelines for function syntax:
-Whitespace: The user may put as many spaces in the input string as they want. Tabs and newline characters, however, will cause program errors.
+Whitespace: Whitespace characters are to be avoided
 Trigonometry and other operators:
 Sine -> sin(*expression*)
 Cosine -> cos(*expression*)
