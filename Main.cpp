@@ -12,5 +12,8 @@ int main(int argc, char* argv[]){
     } else if(argv[2] == std::string("integrate")) {
         assert(argc == 5);
         std::cout << cm.integrate(std::stod(argv[3]), std::stod(argv[4]));
+    } else if(argv[2] == std::string("differentiate")) {
+        assert(argc == 3);
+        CalcMachine diff = cm.differentiate();
     }
 }

@@ -13,5 +13,7 @@ public:
 };
 
 inline bool operator== (const CalcTree& n1, const CalcTree& n2) {
-    return n1.op == n2.op && n1.val == n2.val && n1.leftbranch == n2.leftbranch && n1.rightbranch == n2.rightbranch;
+    return (n1.op == n2.op && n1.val == n2.val) &&
+           (n1.leftbranch && n2.leftbranch && *n1.leftbranch == *n2.leftbranch) &&
+           (n1.rightbranch && n2.rightbranch && *n1.rightbranch == *n2.rightbranch);
 }

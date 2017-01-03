@@ -198,3 +198,31 @@ const double CalcMachine::integrate(const double low_bound, const double high_bo
     }
     return ret;
 }
+//Recursive function to determine if a tree represents a function of x
+const bool containsX(CalcTree* func){
+    if(!func)
+        return false;
+    else
+        return (func->op == CalcTree::null && (func->val == std::string("x") || func->val == std::string("-x"))) ||
+               containsX(func->leftbranch) || containsX(func->rightbranch);
+}
+
+CalcTree* computeDerivative(CalcTree* func){
+    if(func->op == CalcTree::add)
+        return new CalcTree(CalcTree::add, computeDerivative(func->leftbranch), computeDerivative(func->rightbranch));
+    else if(func->op == CalcTree::sub)
+        return new CalcTree(CalcTree::sub, computeDerivative(func->leftbranch), computeDerivative(func->rightbranch));
+    else if(func->op == CalcTree::mult)
+        return new CalcTree(CalcTree::add, new CalcTree(CalcTree::mult, func->leftbranch, computeDerivative(func->rightbranch)),
+                            new CalcTree(CalcTree::mult, computeDerivative(func->leftbranch), func->rightbranch));
+    else if(func->op == CalcTree::div)
+        return new CalcTree(CalcTree::div, new CalcTree(CalcTree::sub, new CalcTree(CalcTree::mult, func->leftbranch, computeDerivative(func->rightbranch)),
+                            new CalcTree(CalcTree::mult, computeDerivative(func->leftbranch), func->rightbranch)), new CalcTree(CalcTree::exp,
+                            func->rightbranch, new CalcTree("2")));
+    else if(func->op == CalcTree::exp);
+        if(containsX(func->leftbranch));
+}
+
+CalcMachine CalcMachine::differentiate() {
+    CalcTree* diff = computeDerivative(root);
+}
