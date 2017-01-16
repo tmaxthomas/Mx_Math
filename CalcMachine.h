@@ -16,7 +16,6 @@ public:
     const std::string& getFunction() const { return function; }
     const double evaluate(const double index) const;
     const double integrate(const double low_bound, const double high_bound) const;
-    CalcMachine differentiate();
     ~CalcMachine() { delete root; }
 private:
     //Internal methods
