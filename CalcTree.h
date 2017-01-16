@@ -4,7 +4,8 @@ class CalcTree {
 public:
 	enum Operators {add, sub, mult, div, exp, sin, cos, tan, ln, neg, null};
     CalcTree(Operators inop, CalcTree* inlbr, CalcTree* inrbr = NULL) : val(""), op(inop), leftbranch(inlbr), rightbranch(inrbr) {}
-    CalcTree(std::string inval) : val(inval), op(null), leftbranch(NULL), rightbranch(NULL){}
+    CalcTree(std::string inval) : val(inval), op(null), leftbranch(NULL), rightbranch(NULL) {}
+    CalcTree(CalcTree* old) : val(old->val), op(old->op), leftbranch(old->leftbranch), rightbranch(old->rightbranch) {}
 	std::string val;
 	Operators op;
 	CalcTree* leftbranch;
