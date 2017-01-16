@@ -84,6 +84,9 @@ CalcTree* CalcMachine::generateTree(std::string function) {
         else if(a != 0 && closure == 0 && a == function.length() - 1)
             function = function.substr(1, function.length() - 2);
     }
+    //If the thing being dealt with is a negative number
+    if(function.at(0) == '-')
+        return new CalcTree(CalcTree::neg, generateTree(function.substr(1, function.length() - 1)));
 
     if(isANum(function))
         return new CalcTree(function);
@@ -115,7 +118,7 @@ void incFunc(int& inc, bool dir){
     if(dir) ++inc;
     else --inc;
 }
-
+//Switchable comparison function
 bool comp(int a, int b, bool dir){
     if(dir) return a < b;
     else return a > b;
@@ -137,8 +140,8 @@ CalcTree* CalcMachine::binaryOpGenerator(CalcTree::Operators op, char ch, bool d
             }
         }
         if(function.at(c) == ch) {
-            if (ch != '-' || (isANum(function.at(c - 1)) || function.at(c - 1) ==
-                                                            ')')) //Conditional to deal with not confusing minus signs and subtraction
+            //Conditional to not conflate subtraction with minus signs
+            if(ch != '-' || (function.at(c - 1) == ')' || isANum(function.at(c - 1))))
                 return new CalcTree(op, generateTree(function.substr(0, c)),
                                     generateTree(function.substr(c + 1, function.length() - c - 1)));
         }
@@ -148,10 +151,6 @@ CalcTree* CalcMachine::binaryOpGenerator(CalcTree::Operators op, char ch, bool d
 
 //Checks if char inchar is a number using the ASCII table
 bool CalcMachine::isANum(std::string instr){
-    if(instr.size() < 3) //All strings that short are necessarily numbers
-        return true;
-    if(!(instr.at(0) == '-' || isANum(instr.at(0))))
-        return false;
     for(unsigned a = 1; a < instr.size(); a++)
         if(!isANum(instr.at(a)))
             return false;
@@ -159,7 +158,7 @@ bool CalcMachine::isANum(std::string instr){
 }
 
 bool CalcMachine::isANum(char inchar) {
-    if((inchar < 48 || inchar > 57) && inchar != 46 && inchar != 120) return false;
+    if((inchar < '0' || inchar > '9') && inchar != 46 && inchar != 120) return false;
     else return true;
 }
 
@@ -169,7 +168,6 @@ bool CalcMachine::isANum(char inchar) {
 double recurseEvaluate(CalcTree* parsetree, double index) {
     if(parsetree->op == CalcTree::null) {
         if(parsetree->val == "x") return index;
-        else if(parsetree->val == "-x") return -index;
         else return stod(parsetree -> val);
     } else {
         if(parsetree->op == CalcTree::add) return recurseEvaluate(parsetree->leftbranch, index) + recurseEvaluate(parsetree->rightbranch, index);
@@ -181,6 +179,7 @@ double recurseEvaluate(CalcTree* parsetree, double index) {
         else if(parsetree->op == CalcTree::cos) return std::cos(recurseEvaluate(parsetree->leftbranch, index));
         else if(parsetree->op == CalcTree::tan) return std::tan(recurseEvaluate(parsetree->leftbranch, index));
         else if(parsetree->op == CalcTree::ln) return std::log(recurseEvaluate(parsetree->leftbranch, index));
+        else if(parsetree->op == CalcTree::neg) return -recurseEvaluate(parsetree->leftbranch, index);
         else return 0;
     }
 }
@@ -197,4 +196,37 @@ const double CalcMachine::integrate(const double low_bound, const double high_bo
         ret += ((recurseEvaluate(root, a) + recurseEvaluate(root, a + .001)) / 2) * .001;
     }
     return ret;
+}
+
+std::string CalcMachine::derivative() {
+    CalcTree* ddx = computeDerivative(root);
+
+}
+//Checks recursively if a calctree contains an x somewhere in its structure
+bool containsX(CalcTree* fxn) {
+    if(!fxn) return false;
+    else return (fxn->val == std::string("x") || containsX(fxn->leftbranch) || containsX(fxn->rightbranch));
+}
+
+CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
+    if(fxn->op == CalcTree::null)
+        if(fxn->val == std::string("x")) return new CalcTree("1");
+        else return new CalcTree("0");
+    if(fxn->op == CalcTree::add)
+        return new CalcTree(CalcTree::add, computeDerivative(fxn->leftbranch), computeDerivative(fxn->rightbranch));
+    else if(fxn->op == CalcTree::sub)
+        return new CalcTree(CalcTree::sub, computeDerivative(fxn->leftbranch), computeDerivative(fxn->rightbranch));
+    else if(fxn->op == CalcTree::mult) //Product rule
+        return new CalcTree(CalcTree::add, new CalcTree(CalcTree::mult, fxn->leftbranch, computeDerivative(fxn->rightbranch)),
+                                           new CalcTree(CalcTree::mult, computeDerivative(fxn->leftbranch), fxn->rightbranch));
+    else if(fxn->op == CalcTree::div) //Quotient rule
+        return new CalcTree(CalcTree::div, new CalcTree(CalcTree::sub, new CalcTree(CalcTree::mult, fxn->leftbranch, computeDerivative(fxn->rightbranch)),
+                                                                       new CalcTree(CalcTree::mult, computeDerivative(fxn->leftbranch), fxn->rightbranch)),
+                                           new CalcTree(CalcTree::exp, fxn->rightbranch, new CalcTree("2")));
+    else if(fxn->op == CalcTree::exp) {
+        if(containsX(fxn->leftbranch)) {
+            if(containsX(fxn->rightbranch)) throw 1;
+            else return new CalcTree
+        }
+    }
 }
