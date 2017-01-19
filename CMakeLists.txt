@@ -7,6 +7,6 @@ set(SOURCE_FILES
     CalcMachine.cpp
     CalcMachine.h
     CalcTree.h
-    Main.cpp)
+    Main.cpp CalcTree.cpp)
 
 add_executable(Mx_Math ${SOURCE_FILES})

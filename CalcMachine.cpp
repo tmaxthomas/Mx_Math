@@ -89,7 +89,10 @@ CalcTree* CalcMachine::generateTree(std::string function) {
         return new CalcTree(CalcTree::neg, generateTree(function.substr(1, function.length() - 1)));
 
     if(isANum(function))
-        return new CalcTree(function);
+        return new CalcTree(atoi(function));
+
+    if(function == std::string("x"))
+        return new CalcTree(CalcTree::x);
 
     CalcTree* ret_ptr = binaryOpGenerator(CalcTree::add, '+', true, function);
     if(ret_ptr != NULL) return ret_ptr;
@@ -167,8 +170,8 @@ bool CalcMachine::isANum(char inchar) {
  */
 double recurseEvaluate(CalcTree* parsetree, double index) {
     if(parsetree->op == CalcTree::null) {
-        if(parsetree->val == "x") return index;
-        else return stod(parsetree -> val);
+        if(parsetree->op = CalcTree::x) return index;
+        else return parsetree->val;
     } else {
         if(parsetree->op == CalcTree::add) return recurseEvaluate(parsetree->leftbranch, index) + recurseEvaluate(parsetree->rightbranch, index);
         else if(parsetree->op == CalcTree::sub) return recurseEvaluate(parsetree->leftbranch, index) - recurseEvaluate(parsetree->rightbranch, index);
@@ -205,13 +208,13 @@ std::string CalcMachine::derivative() {
 //Checks recursively if a calctree contains an x somewhere in its structure
 bool containsX(CalcTree* fxn) {
     if(!fxn) return false;
-    else return (fxn->val == std::string("x") || containsX(fxn->leftbranch) || containsX(fxn->rightbranch));
+    else return (fxn->op == CalcTree::x || containsX(fxn->leftbranch) || containsX(fxn->rightbranch));
 }
 
 CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
     if(fxn->op == CalcTree::null)
-        if(fxn->val == std::string("x")) return new CalcTree("1");
-        else return new CalcTree("0");
+        if(fxn->op == CalcTree::x) return new CalcTree(1);
+        else return new CalcTree(0);
     if(fxn->op == CalcTree::add)
         return new CalcTree(CalcTree::add, computeDerivative(fxn->leftbranch), computeDerivative(fxn->rightbranch));
     else if(fxn->op == CalcTree::sub)
@@ -222,7 +225,7 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
     else if(fxn->op == CalcTree::div) //Quotient rule
         return new CalcTree(CalcTree::div, new CalcTree(CalcTree::sub, new CalcTree(CalcTree::mult, new CalcTree(fxn->leftbranch), computeDerivative(fxn->rightbranch)),
                                                                        new CalcTree(CalcTree::mult, computeDerivative(fxn->leftbranch), new CalcTree(fxn->rightbranch))),
-                                           new CalcTree(CalcTree::exp, new CalcTree(fxn->rightbranch), new CalcTree("2")));
+                                           new CalcTree(CalcTree::exp, new CalcTree(fxn->rightbranch), new CalcTree(2)));
     else if(fxn->op == CalcTree::exp) {
         if(containsX(fxn->leftbranch)) {
             if(containsX(fxn->rightbranch)) throw 1;
@@ -232,7 +235,7 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
                                                                   new CalcTree(CalcTree::exp, new CalcTree(fxn->leftbranch),
                                                                                               new CalcTree(CalcTree::sub,
                                                                                               new CalcTree(fxn->rightbranch),
-                                                                                              new CalcTree("1")))),
+                                                                                              new CalcTree(1)))),
                                      computeDerivative(fxn->leftbranch));
         } else { //Chain rule
             return new CalcTree(CalcTree::mult,
@@ -245,14 +248,36 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
         return new CalcTree(CalcTree::mult, new CalcTree(CalcTree::neg, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch))), computeDerivative(fxn->leftbranch));
     else if(fxn->op == CalcTree::tan) //Chain rule
         return new CalcTree(CalcTree::div, computeDerivative(fxn->leftbranch),
-                            new CalcTree(CalcTree::exp, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch)), new CalcTree("2")));
+                            new CalcTree(CalcTree::exp, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch)), new CalcTree(0)));
     else if(fxn->op == CalcTree::ln) //Chain rule
         return new CalcTree(CalcTree::div, computeDerivative(fxn->leftbranch), new CalcTree(fxn->leftbranch));
     else if(fxn->op == CalcTree::neg)
         return new CalcTree(CalcTree::neg, computeDerivative(fxn->leftbranch));
     else return NULL;
 }
-//Recursive algebraic simplification method
-void CalcMachine::simplify(CalcTree* tree) {
-    
+//Recursive algebraic simplification method-also, welcome... to the world of conditionals!
+void CalcMachine::simplify(CalcTree*& tree) {
+    if(tree->op == CalcTree::x) return; //Don't even bother checking anything else
+    else if(tree->op == CalcTree::null) return; //Ditto
+    //First recursive pass, used for cleaning up loose arithmetic
+    simplify(tree->leftbranch);
+    simplify(tree->rightbranch);
+    CalcTree zero(0), one(1); //Used for comparison purposes
+    if(tree->op == CalcTree::add) {
+        if(tree->leftbranch == zero) {
+            CalcTree* temp = tree;
+            tree = tree->rightbranch;
+            temp->rightbranch = NULL;
+            delete temp;
+        } else if(tree->rightbranch == zero) {
+            CalcTree* temp = tree;
+            tree = tree->leftbranch;
+            temp->rightbranch = NULL;
+            delete temp;
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) {
+            CalcTree* temp = new CalcTree(tree->leftbranch->val + tree->rightbranch->val);
+            delete tree;
+            tree = temp;
+        }
+    }
 }
