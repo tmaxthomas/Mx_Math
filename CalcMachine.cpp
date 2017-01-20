@@ -168,7 +168,7 @@ bool CalcMachine::isANum(char inchar) {
 /*
  * EVALUATION METHODS
  */
-double recurseEvaluate(CalcTree* parsetree, double index) {
+double recurseEvaluate(CalcTree* parsetree, double index = 0) {
     if(parsetree->op == CalcTree::null) {
         if(parsetree->op = CalcTree::x) return index;
         else return parsetree->val;
@@ -275,9 +275,41 @@ void CalcMachine::simplify(CalcTree*& tree) {
             temp->rightbranch = NULL;
             delete temp;
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) {
-            CalcTree* temp = new CalcTree(tree->leftbranch->val + tree->rightbranch->val);
+            CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) + recurseEvaluate(tree->rightbranch));
             delete tree;
             tree = temp;
+        }
+    } else if(tree->op == CalcTree::sub) {
+        if(tree->leftbranch == zero) { //If the tree is zero minus something
+            tree->op = CalcTree::neg;
+            delete tree->leftbranch;
+            tree->leftbranch = tree->rightbranch;
+            tree->rightbranch = NULL;
+        } else if(tree->rightbranch == zero) { //If the tree is something minues zero
+            CalcTree* temp = tree;
+            tree = tree->leftbranch;
+            temp->rightbranch = NULL;
+            delete temp;
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //If the tree is raw arithemtic
+            CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) - recurseEvaluate(tree->rightbranch));
+            delete tree;
+            tree = temp;
+        } else if(*tree->leftbranch == *tree->rightbranch) { //If the tree is f(x) - f(x)
+            delete tree;
+            tree = new CalcTree(0);
+        }
+    } else if(tree->op == CalcTree::mult) {
+        if(tree->leftbranch == zero || tree->rightbranch == zero) { //If the tree is something times zero
+            delete tree;
+            tree = new CalcTree(0);
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //If the tree is raw arithmetic
+            CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) * recurseEvaluate(tree->rightbranch));
+            delete tree;
+            tree = temp;
+        } else if(*tree->leftbranch == *tree->rightbranch) { //Swap f(x) * f(x) for f(x)^2
+            delete tree->rightbranch;
+            tree->op = CalcTree::exp;
+            tree->rightbranch = new CalcTree(2);
         }
     }
 }
