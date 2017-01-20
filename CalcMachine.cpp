@@ -404,3 +404,11 @@ void CalcMachine::simplify(CalcTree*& tree) {
     simplify(tree->leftbranch);
     simplify(tree->rightbranch);
 }
+
+//Recursive tree deconstruction method
+std::string CalcMachine::deconstruct(CalcTree* tree, int level) {
+    if(tree->op == CalcTree::add) {
+        std::string tmp = deconstruct(tree->leftbranch, 0) + "+" + deconstruct(tree->rightbranch, 0);
+        if(level > 0)
+    }
+}
