@@ -360,5 +360,47 @@ void CalcMachine::simplify(CalcTree*& tree) {
             delete tree;
             tree = new CalcTree(1);
         }
+    } else if(tree->op == CalcTree::exp) {
+        if(tree->rightbranch == zero && tree->leftbranch == zero) { //Sero to the power of itself
+            std::cerr << "ERROR: Raised zero to the power of itself in function reduction";
+            exit(1);
+        } else if(tree->rightbranch == zero) { //Raising something to the power zero
+            delete tree;
+            tree = new CalcTree(1);
+        } else if(tree->rightbranch == one) { //Raising something to the power one
+            CalcTree* temp = tree->leftbranch;
+            tree->leftbranch = NULL;
+            delete tree;
+            tree = temp;
+        } else if(tree->leftbranch == zero) { //Raising zero to any power
+            delete tree;
+            tree = new CalcTree(0);
+        } else if(tree->leftbranch == one) { //Raising one to any power
+            delete tree;
+            tree = new CalcTree(1);
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
+            CalcTree* temp = new CalcTree(std::pow(recurseEvaluate(tree->leftbranch), recurseEvaluate(tree->rightbranch)));
+            delete tree;
+            tree = temp;
+        }
+    } else if(tree->op == CalcTree::sin && tree->leftbranch->isANum()) { //Sines that are arithmetic
+        CalcTree* temp = new CalcTree(std::sin(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    } else if(tree->op == CalcTree::cos && tree->leftbranch->isANum()) { //Cosines that are arithmetic
+        CalcTree* temp = new CalcTree(std::cos(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    } else if(tree->op == CalcTree::tan && tree->leftbranch->isANum()) { //Tangents that are arithmetic
+        CalcTree* temp = new CalcTree(std::tan(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    } else if(tree->op == CalcTree::ln && tree->leftbranch->isANum()) { //Natural logs that are arithmetic
+        CalcTree* temp = new CalcTree(std::log(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
     }
+    //Second recursive pass
+    simplify(tree->leftbranch);
+    simplify(tree->rightbranch);
 }
