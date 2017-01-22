@@ -16,7 +16,6 @@ public:
     const std::string& getFunction() const { return function; }
     const double evaluate(const double index) const;
     const double integrate(const double low_bound, const double high_bound) const;
-    std::string derivative();
     ~CalcMachine() { delete root; }
 private:
     //Internal methods
@@ -27,6 +26,7 @@ private:
     bool isANum(char inchar);
     CalcTree* computeDerivative(CalcTree* fxn);
     void simplify(CalcTree*& tree);
+    std::string deconstruct(CalcTree* tree, int level);
     //Member variables
     CalcTree* root;
     std::string function;

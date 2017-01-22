@@ -264,17 +264,17 @@ void CalcMachine::simplify(CalcTree*& tree) {
     simplify(tree->rightbranch);
     CalcTree zero(0), one(1); //Used for comparison purposes
     if(tree->op == CalcTree::add) {
-        if(tree->leftbranch == zero) {
+        if(tree->leftbranch == zero) { //Addition of zero
             CalcTree* temp = tree;
             tree = tree->rightbranch;
             temp->rightbranch = NULL;
             delete temp;
-        } else if(tree->rightbranch == zero) {
+        } else if(tree->rightbranch == zero) { //Addition of zero: the reckoning
             CalcTree* temp = tree;
             tree = tree->leftbranch;
             temp->rightbranch = NULL;
             delete temp;
-        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) {
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //If the tree is raw arithmetic
             CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) + recurseEvaluate(tree->rightbranch));
             delete tree;
             tree = temp;
@@ -299,6 +299,23 @@ void CalcMachine::simplify(CalcTree*& tree) {
             tree = new CalcTree(0);
         }
     } else if(tree->op == CalcTree::mult) {
+        if(tree->leftbranch->op == CalcTree::neg && tree->rightbranch->op == CalcTree::neg) { //If two negative numbers are multiplied
+            CalcTree *ltemp = tree->leftbranch, *rtemp = tree->rightbranch;
+            tree->leftbranch = ltemp->leftbranch;
+            tree->rightbranch = rtemp->leftbranch;
+            delete ltemp;
+            delete rtemp;
+        } else if(tree->leftbranch->op == CalcTree::neg) { //If the left term is negative
+            CalcTree* temp = tree->leftbranch;
+            tree->leftbranch = temp->leftbranch;
+            temp->leftbranch = tree;
+            tree = temp;
+        } else if(tree->rightbranch->op == CalcTree::neg) { //If the right term is negative
+            CalcTree* temp = tree->rightbranch;
+            tree->rightbranch = temp->leftbranch;
+            temp->leftbranch = tree;
+            tree = temp;
+        }
         if(tree->leftbranch == zero || tree->rightbranch == zero) { //If the tree is something times zero
             delete tree;
             tree = new CalcTree(0);
@@ -311,5 +328,87 @@ void CalcMachine::simplify(CalcTree*& tree) {
             tree->op = CalcTree::exp;
             tree->rightbranch = new CalcTree(2);
         }
+    } else if(tree->op == CalcTree::div) {
+        if(tree->leftbranch->op == CalcTree::neg && tree->rightbranch->op == CalcTree::neg) { //If two negative numbers are multiplied
+            CalcTree *ltemp = tree->leftbranch, *rtemp = tree->rightbranch;
+            tree->leftbranch = ltemp->leftbranch;
+            tree->rightbranch = rtemp->leftbranch;
+            delete ltemp;
+            delete rtemp;
+        } else if(tree->leftbranch->op == CalcTree::neg) { //If the left term is negative
+            CalcTree* temp = tree->leftbranch;
+            tree->leftbranch = temp->leftbranch;
+            temp->leftbranch = tree;
+            tree = temp;
+        } else if(tree->rightbranch->op == CalcTree::neg) { //If the right term is negative
+            CalcTree* temp = tree->rightbranch;
+            tree->rightbranch = temp->leftbranch;
+            temp->leftbranch = tree;
+            tree = temp;
+        }
+        if(tree->rightbranch == zero) {
+            std::cerr << "ERROR: Division by zero found in function reduction";
+            exit(1);
+        } else if(tree->leftbranch == zero) { //If the tree is zero divided by something
+            delete tree;
+            tree = new CalcTree(0);
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
+            CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) / recurseEvaluate(tree->rightbranch));
+            delete tree;
+            tree = temp;
+        } else if(*tree->leftbranch == *tree->rightbranch) { //If the tree is something divided by itself
+            delete tree;
+            tree = new CalcTree(1);
+        }
+    } else if(tree->op == CalcTree::exp) {
+        if(tree->rightbranch == zero && tree->leftbranch == zero) { //Sero to the power of itself
+            std::cerr << "ERROR: Raised zero to the power of itself in function reduction";
+            exit(1);
+        } else if(tree->rightbranch == zero) { //Raising something to the power zero
+            delete tree;
+            tree = new CalcTree(1);
+        } else if(tree->rightbranch == one) { //Raising something to the power one
+            CalcTree* temp = tree->leftbranch;
+            tree->leftbranch = NULL;
+            delete tree;
+            tree = temp;
+        } else if(tree->leftbranch == zero) { //Raising zero to any power
+            delete tree;
+            tree = new CalcTree(0);
+        } else if(tree->leftbranch == one) { //Raising one to any power
+            delete tree;
+            tree = new CalcTree(1);
+        } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
+            CalcTree* temp = new CalcTree(std::pow(recurseEvaluate(tree->leftbranch), recurseEvaluate(tree->rightbranch)));
+            delete tree;
+            tree = temp;
+        }
+    } else if(tree->op == CalcTree::sin && tree->leftbranch->isANum()) { //Sines that are arithmetic
+        CalcTree* temp = new CalcTree(std::sin(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    } else if(tree->op == CalcTree::cos && tree->leftbranch->isANum()) { //Cosines that are arithmetic
+        CalcTree* temp = new CalcTree(std::cos(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    } else if(tree->op == CalcTree::tan && tree->leftbranch->isANum()) { //Tangents that are arithmetic
+        CalcTree* temp = new CalcTree(std::tan(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    } else if(tree->op == CalcTree::ln && tree->leftbranch->isANum()) { //Natural logs that are arithmetic
+        CalcTree* temp = new CalcTree(std::log(recurseEvaluate(tree->leftbranch)));
+        delete tree;
+        tree = temp;
+    }
+    //Second recursive pass
+    simplify(tree->leftbranch);
+    simplify(tree->rightbranch);
+}
+
+//Recursive tree deconstruction method
+std::string CalcMachine::deconstruct(CalcTree* tree, int level) {
+    if(tree->op == CalcTree::add) {
+        std::string tmp = deconstruct(tree->leftbranch, 0) + "+" + deconstruct(tree->rightbranch, 0);
+        if(level > 0)
     }
 }
