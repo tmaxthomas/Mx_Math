@@ -204,6 +204,7 @@ const double CalcMachine::integrate(const double low_bound, const double high_bo
 std::string CalcMachine::derivative() {
     CalcTree* ddx = computeDerivative(root);
     simplify(ddx);
+    return deconstruct(ddx, 0);
 }
 //Checks recursively if a calctree contains an x somewhere in its structure
 bool containsX(CalcTree* fxn) {
@@ -406,9 +407,39 @@ void CalcMachine::simplify(CalcTree*& tree) {
 }
 
 //Recursive tree deconstruction method
+//The level parameter is used to make sure order of operations is preserved
+//by making sure parentheses are added where needed
 std::string CalcMachine::deconstruct(CalcTree* tree, int level) {
+    std::string tmp = "";
     if(tree->op == CalcTree::add) {
-        std::string tmp = deconstruct(tree->leftbranch, 0) + "+" + deconstruct(tree->rightbranch, 0);
-        if(level > 0)
+        tmp = deconstruct(tree->leftbranch, 0) + "+" + deconstruct(tree->rightbranch, 0);
+        if(level > 0) tmp = "(" + tmp + ")";
+    } else if(tree->op == CalcTree::sub) {
+        tmp = deconstruct(tree->leftbranch, 0) + "-" + deconstruct(tree->rightbranch, 0);
+        if(level > 0) tmp = "(" + tmp + ")";
+    } else if(tree->op == CalcTree::mult) {
+        tmp = deconstruct(tree->leftbranch, 1) + "*" + deconstruct(tree->rightbranch, 1);
+        if(level > 1) tmp = "(" + tmp + ")";
+    } else if(tree->op == CalcTree::div) {
+        tmp = deconstruct(tree->leftbranch, 1) + "/" + deconstruct(tree->rightbranch, 1);
+        if(level > 1) tmp = "(" + tmp + ")";
+    } else if(tree->op == CalcTree::exp) {
+        tmp = deconstruct(tree->leftbranch, 2) + "^" + deconstruct(tree->rightbranch, 2);
+        if(level > 2) tmp = "(" + tmp + ")";
+    } else if(tree->op == CalcTree::sin) {
+        tmp = "sin(" + deconstruct(tree->leftbranch, 0) + ")";
+    } else if(tree->op == CalcTree::cos) {
+        tmp = "cos(" + deconstruct(tree->leftbranch, 0) + ")";
+    } else if(tree->op == CalcTree::tan) {
+        tmp = "tan(" + deconstruct(tree->leftbranch, 0) + ")";
+    } else if(tree->op == CalcTree::ln) {
+        tmp = "ln(" + deconstruct(tree->leftbranch, 0) + ")";
+    } else if(tree->op == CalcTree::neg) {
+        tmp = "-" + deconstruct(tree->leftbranch, 3);
+    } else if(tree->op == CalcTree::x) {
+        tmp = "x";
+    } else if(tree->op == CalcTree::null) {
+        tmp = std::to_string(tree->val);
     }
+    return tmp;
 }

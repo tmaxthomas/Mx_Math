@@ -14,6 +14,6 @@ int main(int argc, char* argv[]){
         std::cout << cm.integrate(std::stod(argv[3]), std::stod(argv[4]));
     } else if(argv[2] == std::string("derivative")) {
         assert(argc == 3);
-
+        std::cout << cm.derivative();
     }
 }
