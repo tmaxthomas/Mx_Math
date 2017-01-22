@@ -89,7 +89,7 @@ CalcTree* CalcMachine::generateTree(std::string function) {
         return new CalcTree(CalcTree::neg, generateTree(function.substr(1, function.length() - 1)));
 
     if(isANum(function))
-        return new CalcTree(atoi(function));
+        return new CalcTree(stod(function));
 
     if(function == std::string("x"))
         return new CalcTree(CalcTree::x);
@@ -169,8 +169,8 @@ bool CalcMachine::isANum(char inchar) {
  * EVALUATION METHODS
  */
 double recurseEvaluate(CalcTree* parsetree, double index = 0) {
-    if(parsetree->op == CalcTree::null) {
-        if(parsetree->op = CalcTree::x) return index;
+    if(parsetree->op == CalcTree::null || parsetree->op == CalcTree::x) {
+        if(parsetree->op == CalcTree::x) return index;
         else return parsetree->val;
     } else {
         if(parsetree->op == CalcTree::add) return recurseEvaluate(parsetree->leftbranch, index) + recurseEvaluate(parsetree->rightbranch, index);
@@ -213,10 +213,11 @@ bool containsX(CalcTree* fxn) {
 }
 
 CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
-    if(fxn->op == CalcTree::null)
-        if(fxn->op == CalcTree::x) return new CalcTree(1);
-        else return new CalcTree(0);
-    if(fxn->op == CalcTree::add)
+    if(fxn->op == CalcTree::x)
+        return new CalcTree(1.0);
+    else if(fxn->op == CalcTree::null)
+        return new CalcTree(0.0);
+    else if(fxn->op == CalcTree::add)
         return new CalcTree(CalcTree::add, computeDerivative(fxn->leftbranch), computeDerivative(fxn->rightbranch));
     else if(fxn->op == CalcTree::sub)
         return new CalcTree(CalcTree::sub, computeDerivative(fxn->leftbranch), computeDerivative(fxn->rightbranch));
@@ -226,7 +227,7 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
     else if(fxn->op == CalcTree::div) //Quotient rule
         return new CalcTree(CalcTree::div, new CalcTree(CalcTree::sub, new CalcTree(CalcTree::mult, new CalcTree(fxn->leftbranch), computeDerivative(fxn->rightbranch)),
                                                                        new CalcTree(CalcTree::mult, computeDerivative(fxn->leftbranch), new CalcTree(fxn->rightbranch))),
-                                           new CalcTree(CalcTree::exp, new CalcTree(fxn->rightbranch), new CalcTree(2)));
+                                           new CalcTree(CalcTree::exp, new CalcTree(fxn->rightbranch), new CalcTree(2.0)));
     else if(fxn->op == CalcTree::exp) {
         if(containsX(fxn->leftbranch)) {
             if(containsX(fxn->rightbranch)) throw 1;
@@ -236,7 +237,7 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
                                                                   new CalcTree(CalcTree::exp, new CalcTree(fxn->leftbranch),
                                                                                               new CalcTree(CalcTree::sub,
                                                                                               new CalcTree(fxn->rightbranch),
-                                                                                              new CalcTree(1)))),
+                                                                                              new CalcTree(1.0)))),
                                      computeDerivative(fxn->leftbranch));
         } else { //Chain rule
             return new CalcTree(CalcTree::mult,
@@ -249,7 +250,7 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
         return new CalcTree(CalcTree::mult, new CalcTree(CalcTree::neg, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch))), computeDerivative(fxn->leftbranch));
     else if(fxn->op == CalcTree::tan) //Chain rule
         return new CalcTree(CalcTree::div, computeDerivative(fxn->leftbranch),
-                            new CalcTree(CalcTree::exp, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch)), new CalcTree(0)));
+                            new CalcTree(CalcTree::exp, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch)), new CalcTree(2.0)));
     else if(fxn->op == CalcTree::ln) //Chain rule
         return new CalcTree(CalcTree::div, computeDerivative(fxn->leftbranch), new CalcTree(fxn->leftbranch));
     else if(fxn->op == CalcTree::neg)
@@ -263,7 +264,7 @@ void CalcMachine::simplify(CalcTree*& tree) {
     //First recursive pass, used for cleaning up loose arithmetic
     simplify(tree->leftbranch);
     simplify(tree->rightbranch);
-    CalcTree zero(0), one(1); //Used for comparison purposes
+    CalcTree zero(0.0), one(1.0); //Used for comparison purposes
     if(tree->op == CalcTree::add) {
         if(tree->leftbranch == zero) { //Addition of zero
             CalcTree* temp = tree;
@@ -297,7 +298,7 @@ void CalcMachine::simplify(CalcTree*& tree) {
             tree = temp;
         } else if(*tree->leftbranch == *tree->rightbranch) { //If the tree is f(x) - f(x)
             delete tree;
-            tree = new CalcTree(0);
+            tree = new CalcTree(0.0);
         }
     } else if(tree->op == CalcTree::mult) {
         if(tree->leftbranch->op == CalcTree::neg && tree->rightbranch->op == CalcTree::neg) { //If two negative numbers are multiplied
@@ -319,7 +320,7 @@ void CalcMachine::simplify(CalcTree*& tree) {
         }
         if(tree->leftbranch == zero || tree->rightbranch == zero) { //If the tree is something times zero
             delete tree;
-            tree = new CalcTree(0);
+            tree = new CalcTree(0.0);
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //If the tree is raw arithmetic
             CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) * recurseEvaluate(tree->rightbranch));
             delete tree;
@@ -327,7 +328,7 @@ void CalcMachine::simplify(CalcTree*& tree) {
         } else if(*tree->leftbranch == *tree->rightbranch) { //Swap f(x) * f(x) for f(x)^2
             delete tree->rightbranch;
             tree->op = CalcTree::exp;
-            tree->rightbranch = new CalcTree(2);
+            tree->rightbranch = new CalcTree(2.0);
         }
     } else if(tree->op == CalcTree::div) {
         if(tree->leftbranch->op == CalcTree::neg && tree->rightbranch->op == CalcTree::neg) { //If two negative numbers are multiplied
@@ -352,14 +353,14 @@ void CalcMachine::simplify(CalcTree*& tree) {
             exit(1);
         } else if(tree->leftbranch == zero) { //If the tree is zero divided by something
             delete tree;
-            tree = new CalcTree(0);
+            tree = new CalcTree(0.0);
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
             CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) / recurseEvaluate(tree->rightbranch));
             delete tree;
             tree = temp;
         } else if(*tree->leftbranch == *tree->rightbranch) { //If the tree is something divided by itself
             delete tree;
-            tree = new CalcTree(1);
+            tree = new CalcTree(1.0);
         }
     } else if(tree->op == CalcTree::exp) {
         if(tree->rightbranch == zero && tree->leftbranch == zero) { //Sero to the power of itself
@@ -367,7 +368,7 @@ void CalcMachine::simplify(CalcTree*& tree) {
             exit(1);
         } else if(tree->rightbranch == zero) { //Raising something to the power zero
             delete tree;
-            tree = new CalcTree(1);
+            tree = new CalcTree(1.0);
         } else if(tree->rightbranch == one) { //Raising something to the power one
             CalcTree* temp = tree->leftbranch;
             tree->leftbranch = NULL;
@@ -375,10 +376,10 @@ void CalcMachine::simplify(CalcTree*& tree) {
             tree = temp;
         } else if(tree->leftbranch == zero) { //Raising zero to any power
             delete tree;
-            tree = new CalcTree(0);
+            tree = new CalcTree(0.0);
         } else if(tree->leftbranch == one) { //Raising one to any power
             delete tree;
-            tree = new CalcTree(1);
+            tree = new CalcTree(1.0);
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
             CalcTree* temp = new CalcTree(std::pow(recurseEvaluate(tree->leftbranch), recurseEvaluate(tree->rightbranch)));
             delete tree;
