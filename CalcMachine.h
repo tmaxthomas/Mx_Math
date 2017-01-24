@@ -26,7 +26,7 @@ private:
     bool isANum(std::string instr);
     bool isANum(char inchar);
     CalcTree* computeDerivative(CalcTree* fxn);
-    void simplify(CalcTree*& tree);
+    CalcTree* simplify(CalcTree* tree);
     std::string deconstruct(CalcTree* tree, int level);
     //Member variables
     CalcTree* root;
