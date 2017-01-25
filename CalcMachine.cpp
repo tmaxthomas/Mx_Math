@@ -206,7 +206,7 @@ std::string CalcMachine::derivative() {
     std::cout << "Computing derivative\n";
     CalcTree* ddx = computeDerivative(root);
     std::cout << "Simplifying derivative\n";
-    simplify(ddx);
+    ddx = simplify(ddx);
     std::cout << "Deconstructing derivative tree\n";
     std::string deriv =  deconstruct(ddx, 0);
     delete ddx;
@@ -283,12 +283,12 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
     tree->rightbranch = simplify(tree->rightbranch);
     CalcTree zero(0.0), one(1.0); //Used for comparison purposes
     if(tree->op == CalcTree::add) {
-        if(tree->leftbranch == zero) { //Addition of zero
+        if(*tree->leftbranch == zero) { //Addition of zero
             CalcTree* temp = tree;
             tree = tree->rightbranch;
             temp->rightbranch = NULL;
             delete temp;
-        } else if(tree->rightbranch == zero) { //Addition of zero: the reckoning
+        } else if(*tree->rightbranch == zero) { //Addition of zero: the reckoning
             CalcTree* temp = tree;
             tree = tree->leftbranch;
             temp->rightbranch = NULL;
@@ -299,12 +299,12 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             tree = temp;
         }
     } else if(tree->op == CalcTree::sub) {
-        if(tree->leftbranch == zero) { //If the tree is zero minus something
+        if(*tree->leftbranch == zero) { //If the tree is zero minus something
             tree->op = CalcTree::neg;
             delete tree->leftbranch;
             tree->leftbranch = tree->rightbranch;
             tree->rightbranch = NULL;
-        } else if(tree->rightbranch == zero) { //If the tree is something minues zero
+        } else if(*tree->rightbranch == zero) { //If the tree is something minues zero
             CalcTree* temp = tree;
             tree = tree->leftbranch;
             temp->rightbranch = NULL;
@@ -337,9 +337,19 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             temp->leftbranch = tree;
             tree = temp;
         }
-        if(tree->leftbranch == zero || tree->rightbranch == zero) { //If the tree is something times zero
+        if(*tree->leftbranch == zero || *tree->rightbranch == zero) { //If the tree is something times zero
             delete tree;
             tree = new CalcTree(0.0);
+        } else if(*tree->leftbranch == one) { //If the tree is something times one
+            CalcTree* temp = tree;
+            tree = tree->rightbranch;
+            temp->rightbranch = NULL;
+            delete temp;
+        } else if(*tree->rightbranch == one) {
+            CalcTree* temp = tree;
+            tree = tree->leftbranch;
+            temp->leftbranch = NULL;
+            delete temp;
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //If the tree is raw arithmetic
             CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) * recurseEvaluate(tree->rightbranch));
             delete tree;
@@ -369,10 +379,10 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             temp->leftbranch = tree;
             tree = temp;
         }
-        if(tree->rightbranch == zero) {
+        if(*tree->rightbranch == zero) {
             std::cerr << "ERROR: Division by zero found in function reduction";
             exit(1);
-        } else if(tree->leftbranch == zero) { //If the tree is zero divided by something
+        } else if(*tree->leftbranch == zero) { //If the tree is zero divided by something
             delete tree;
             tree = new CalcTree(0.0);
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
@@ -384,21 +394,21 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             tree = new CalcTree(1.0);
         }
     } else if(tree->op == CalcTree::exp) {
-        if(tree->rightbranch == zero && tree->leftbranch == zero) { //Sero to the power of itself
+        if(tree->rightbranch == zero && tree->leftbranch == zero) { //Zero to the power of itself
             std::cerr << "ERROR: Raised zero to the power of itself in function reduction";
             exit(1);
-        } else if(tree->rightbranch == zero) { //Raising something to the power zero
+        } else if(*tree->rightbranch == zero) { //Raising something to the power zero
             delete tree;
             tree = new CalcTree(1.0);
-        } else if(tree->rightbranch == one) { //Raising something to the power one
+        } else if(*tree->rightbranch == one) { //Raising something to the power one
             CalcTree* temp = tree->leftbranch;
             tree->leftbranch = NULL;
             delete tree;
             tree = temp;
-        } else if(tree->leftbranch == zero) { //Raising zero to any power
+        } else if(*tree->leftbranch == zero) { //Raising zero to any power
             delete tree;
             tree = new CalcTree(0.0);
-        } else if(tree->leftbranch == one) { //Raising one to any power
+        } else if(*tree->leftbranch == one) { //Raising one to any power
             delete tree;
             tree = new CalcTree(1.0);
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //if the tree is arithmetic
