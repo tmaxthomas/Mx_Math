@@ -443,6 +443,16 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
     return tree;
 }
 
+//A smarter to_string function
+std::string to_string(double val) {
+    std::string out = std::to_string(val);
+    while(out.at(out.size() - 1) == '0')
+        out = out.substr(0, out.size() - 1);
+    if(out.at(out.size() - 1) == '.')
+        out = out.substr(0, out.size() - 1);
+    return out;
+}
+
 //Recursive tree deconstruction method
 //The level parameter is used to make sure order of operations is preserved
 //by making sure parentheses are added where needed
@@ -476,7 +486,7 @@ std::string CalcMachine::deconstruct(CalcTree* tree, int level) {
     } else if(tree->op == CalcTree::x) {
         tmp = "x";
     } else if(tree->op == CalcTree::null) {
-        tmp = std::to_string(tree->val);
+        tmp = to_string(tree->val);
     }
     return tmp;
 }
