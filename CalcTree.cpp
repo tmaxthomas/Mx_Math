@@ -17,8 +17,19 @@ bool operator== (const CalcTree& n1, const CalcTree& n2) {
     return ret;
 }
 
+bool operator!= (const CalcTree& n1, const CalcTree& n2) {
+    return !(n1 == n2);
+}
+
 //Determines if a calctree represents a number, be it positive or negative
 bool CalcTree::isANum() {
     if(op == neg) return leftbranch->isANum();
     else return op == null;
+}
+
+CalcTree::~CalcTree() {
+    if(leftbranch)
+        delete leftbranch;
+    if(rightbranch)
+        delete rightbranch;
 }

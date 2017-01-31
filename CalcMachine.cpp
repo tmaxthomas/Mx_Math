@@ -206,9 +206,16 @@ std::string CalcMachine::derivative() {
     std::cout << "Computing derivative\n";
     CalcTree* ddx = computeDerivative(root);
     std::cout << "Simplifying derivative\n";
-    ddx = simplify(ddx);
+    CalcTree* ddx_old = NULL;
+    do {
+        if(ddx_old)
+            delete ddx_old;
+        ddx_old = new CalcTree(ddx);
+        ddx = simplify(ddx);
+    } while(*ddx != *ddx_old);
+    delete ddx_old;
     std::cout << "Deconstructing derivative tree\n";
-    std::string deriv =  deconstruct(ddx, 0);
+    std::string deriv = deconstruct(ddx, 0);
     delete ddx;
     return deriv;
 }
@@ -278,9 +285,6 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
     if(!tree) return tree;
     if(tree->op == CalcTree::x) return tree; //Don't even bother checking anything else
     else if(tree->op == CalcTree::null) return tree; //Ditto
-    //First recursive pass, used for cleaning up loose arithmetic
-    tree->leftbranch = simplify(tree->leftbranch);
-    tree->rightbranch = simplify(tree->rightbranch);
     CalcTree zero(0.0), one(1.0); //Used for comparison purposes
     if(tree->op == CalcTree::add) {
         if(*tree->leftbranch == zero) { //Addition of zero
@@ -291,7 +295,7 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
         } else if(*tree->rightbranch == zero) { //Addition of zero: the reckoning
             CalcTree* temp = tree;
             tree = tree->leftbranch;
-            temp->rightbranch = NULL;
+            temp->leftbranch = NULL;
             delete temp;
         } else if(tree->leftbranch->isANum() && tree->rightbranch->isANum()) { //If the tree is raw arithmetic
             CalcTree* temp = new CalcTree(recurseEvaluate(tree->leftbranch) + recurseEvaluate(tree->rightbranch));
