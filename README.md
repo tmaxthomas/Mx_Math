@@ -7,9 +7,11 @@ How to run this program:
 The first program argument should be the function the user wants parsed. Refer to guidelines for function syntax for details about syntax
 Instructions for the various second arguments are as follows:
 
-evaluation: Evaluates the function at the given value of x (third argument)
+evaluate: Evaluates the function at the given value of x (third argument)
 
+integrate: Computes the definite integral of the function over the provided range (third & fourth arguments)
 
+derivative: Computes the derivative of the provided function
 
 Guidelines for function syntax:
 Whitespace: Whitespace characters are to be avoided
