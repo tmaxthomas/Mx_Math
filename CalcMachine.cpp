@@ -239,9 +239,9 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
                             CalcTree::add,
                             new CalcTree(computeDerivative(fxn->leftbranch), CalcTree::mult, new CalcTree(fxn->rightbranch)));
     else if(fxn->op == CalcTree::div) //Quotient rule
-        return new CalcTree(new CalcTree(new CalcTree(new CalcTree(fxn->leftbranch), CalcTree::mult, computeDerivative(fxn->rightbranch)),
+        return new CalcTree(new CalcTree(new CalcTree(computeDerivative(fxn->leftbranch), CalcTree::mult, new CalcTree(fxn->rightbranch)),
                                          CalcTree::sub,
-                                         new CalcTree(computeDerivative(fxn->leftbranch), CalcTree::mult, new CalcTree(fxn->rightbranch))),
+                                         new CalcTree(new CalcTree(fxn->leftbranch), CalcTree::mult, computeDerivative(fxn->rightbranch))),
                             CalcTree::div,
                             new CalcTree(new CalcTree(fxn->rightbranch), CalcTree::exp, new CalcTree(2.0)));
     else if(fxn->op == CalcTree::exp) {
@@ -267,7 +267,7 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
                             CalcTree::mult,
                             computeDerivative(fxn->leftbranch));
     else if(fxn->op == CalcTree::cos) //Chain rule
-        return new CalcTree(new CalcTree(CalcTree::neg, new CalcTree(CalcTree::cos, new CalcTree(fxn->leftbranch))),
+        return new CalcTree(new CalcTree(CalcTree::neg, new CalcTree(CalcTree::sin, new CalcTree(fxn->leftbranch))),
                             CalcTree::mult,
                             computeDerivative(fxn->leftbranch));
     else if(fxn->op == CalcTree::tan) //Chain rule
@@ -280,6 +280,26 @@ CalcTree* CalcMachine::computeDerivative(CalcTree* fxn) {
         return new CalcTree(CalcTree::neg, computeDerivative(fxn->leftbranch));
     else return NULL;
 }
+
+void collectNodes(CalcTree* tree, CalcTree::Operators op, std::vector<CalcTree*>& nums, std::vector<CalcTree*>& fxns) {
+    if(tree->op != op) {
+        if(containsX(tree))
+            fxns.push_back(tree);
+        else
+            nums.push_back(tree);
+    } else {
+        collectNodes(tree->leftbranch, op, nums, fxns);
+        collectNodes(tree->rightbranch, op, nums, fxns);
+        tree->leftbranch = NULL;
+        tree->rightbranch = NULL;
+    }
+}
+
+//Just a breadth-first search for the first node without children
+CalcTree* bfs(CalcTree* tree) {
+    std::vector<CalcTree*> children;
+}
+
 //Recursive algebraic simplification method-also, welcome... to the world of conditionals!
 CalcTree* CalcMachine::simplify(CalcTree* tree) {
     if(!tree) return tree;
@@ -340,8 +360,7 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             tree->rightbranch = temp->leftbranch;
             temp->leftbranch = tree;
             tree = temp;
-        }
-        if(*tree->leftbranch == zero || *tree->rightbranch == zero) { //If the tree is something times zero
+        } else if(*tree->leftbranch == zero || *tree->rightbranch == zero) { //If the tree is something times zero
             delete tree;
             tree = new CalcTree(0.0);
         } else if(*tree->leftbranch == one) { //If the tree is something times one
@@ -362,6 +381,15 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             delete tree->rightbranch;
             tree->op = CalcTree::exp;
             tree->rightbranch = new CalcTree(2.0);
+        } else {
+            std::vector<CalcTree*> nums;
+            std::vector<CalcTree*> fxns;
+            collectNodes(tree, CalcTree::mult, nums, fxns);
+            int prod = 1;
+            for(auto itr = nums.begin(); itr != nums.end(); itr++) {
+                prod *= (*itr)->val;
+            }
+
         }
     } else if(tree->op == CalcTree::div) {
         if(tree->leftbranch->op == CalcTree::neg && tree->rightbranch->op == CalcTree::neg) { //If two negative numbers are multiplied
@@ -382,8 +410,7 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             tree->rightbranch = temp->leftbranch;
             temp->leftbranch = tree;
             tree = temp;
-        }
-        if(*tree->rightbranch == zero) {
+        } else if(*tree->rightbranch == zero) {
             std::cerr << "ERROR: Division by zero found in function reduction";
             exit(1);
         } else if(*tree->leftbranch == zero) { //If the tree is zero divided by something

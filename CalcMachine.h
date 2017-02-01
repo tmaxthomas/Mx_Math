@@ -8,6 +8,7 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <vector>
 #include "CalcTree.h"
 
 class CalcMachine{
