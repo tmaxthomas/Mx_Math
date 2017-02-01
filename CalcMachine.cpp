@@ -294,12 +294,6 @@ void collectNodes(CalcTree* tree, CalcTree::Operators op, std::vector<CalcTree*>
         tree->rightbranch = NULL;
     }
 }
-
-//Just a breadth-first search for the first node without children
-CalcTree* bfs(CalcTree* tree) {
-    std::vector<CalcTree*> children;
-}
-
 //Recursive algebraic simplification method-also, welcome... to the world of conditionals!
 CalcTree* CalcMachine::simplify(CalcTree* tree) {
     if(!tree) return tree;
@@ -381,15 +375,6 @@ CalcTree* CalcMachine::simplify(CalcTree* tree) {
             delete tree->rightbranch;
             tree->op = CalcTree::exp;
             tree->rightbranch = new CalcTree(2.0);
-        } else {
-            std::vector<CalcTree*> nums;
-            std::vector<CalcTree*> fxns;
-            collectNodes(tree, CalcTree::mult, nums, fxns);
-            int prod = 1;
-            for(auto itr = nums.begin(); itr != nums.end(); itr++) {
-                prod *= (*itr)->val;
-            }
-
         }
     } else if(tree->op == CalcTree::div) {
         if(tree->leftbranch->op == CalcTree::neg && tree->rightbranch->op == CalcTree::neg) { //If two negative numbers are multiplied
